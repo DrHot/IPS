@@ -172,9 +172,12 @@ let rec compileExp  (e      : TypedExp)
       else
         [ Mips.LUI (place, makeConst (n / 65536))
         ; Mips.ORI (place, place, makeConst (n % 65536)) ]
-  | Constant (BoolVal _, _) ->
+  | Constant (BoolVal b, pos) ->
+      if b == "true" then
+          [ Mips.LI (place, makeConst "1") ]
+      else
+          [ Mips.LI (place, makeConst "0") ]
       (* TODO project task 1: represent `true`/`false` values as `1`/`0` *)
-      failwith "Unimplemented code generation of boolean constants"
   | Constant (CharVal c, pos) -> [ Mips.LI (place, makeConst (int c)) ]
 
   (* Create/return a label here, collect all string literals of the program
@@ -418,6 +421,7 @@ let rec compileExp  (e      : TypedExp)
       let t1 = newName "and_R"
       let code1 = compileExp e1 vtable t1
       let code2 = compileExp e2 vtable t2
+      code1 @ code2 @ [Mips. (place,t1,t2)]
    *)  
 
 
