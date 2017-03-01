@@ -419,21 +419,20 @@ let rec compileExp  (e      : TypedExp)
   | And (e1, e2, pos) ->      
     let t1 = newName "and_L"
     let code1 = compileExp e1 vtable t1
-    (* let codeTest = [ Mips.LI (place, makeConst 1) ] *)
     match e1 with
       | Constant(BoolVal(false),_) -> code1 @ [ Mips.LI (place, makeConst 0) ]
       | _ -> let t2 = newName "and_R"
              let code2 = compileExp e2 vtable t2
              code1 @ code2 @ [ Mips.AND (place, t1, t2) ]
-(*
-match [code1.[0]] with
-  | codeTest -> code1 @ [ Mips.LI (place, makeConst 0) ]
-  | _ -> let t2 = newName "and_R"
-         let code2 = compileExp e2 vtable t2
-         code1 @ code2 @ [ Mips.AND (place, t1, t2) ]
-*)
-  | Or (_, _, _) ->
-      failwith "Unimplemented code generation of ||"
+
+  | Or (e1, e2, pos) ->
+    let t1 = newName "or_L"
+    let code1 = compileExp e1 vtable t1
+    match e1 with
+      | Constant(BoolVal(true),_) -> code1 @ [ Mips.LI (place, makeConst 1) ]
+      | _ -> let t2 = newName "or_R"
+             let code2 = compileExp e2 vtable t2
+             code1 @ code2 @ [ Mips.OR (place, t1, t2) ]
 
   (* Indexing:
      1. generate code to compute the index
