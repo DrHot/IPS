@@ -173,10 +173,10 @@ let rec compileExp  (e      : TypedExp)
         [ Mips.LUI (place, makeConst (n / 65536))
         ; Mips.ORI (place, place, makeConst (n % 65536)) ]
   | Constant (BoolVal b, pos) ->
-      if b == "true" then
-          [ Mips.LI (place, makeConst "1") ]
+      if b then
+          [ Mips.LI (place, makeConst 1) ]
       else
-          [ Mips.LI (place, makeConst "0") ]
+          [ Mips.LI (place, makeConst 0) ]
       (* TODO project task 1: represent `true`/`false` values as `1`/`0` *)
   | Constant (CharVal c, pos) -> [ Mips.LI (place, makeConst (int c)) ]
 
@@ -416,15 +416,22 @@ let rec compileExp  (e      : TypedExp)
         in `e1 || e2` if the execution of `e1` will evaluate to `true` then 
         the code of `e2` must not be executed. Similar for `And` (&&). 
   *)
-  (* | And (e1, e2, pos) ->      
-      let t1 = newName "and_L"
-      let t1 = newName "and_R"
-      let code1 = compileExp e1 vtable t1
-      let code2 = compileExp e2 vtable t2
-      code1 @ code2 @ [Mips. (place,t1,t2)]
-   *)  
-
-
+  | And (e1, e2, pos) ->      
+    let t1 = newName "and_L"
+    let code1 = compileExp e1 vtable t1
+    (* let codeTest = [ Mips.LI (place, makeConst 1) ] *)
+    match e1 with
+      | Constant(BoolVal(false),_) -> code1 @ [ Mips.LI (place, makeConst 0) ]
+      | _ -> let t2 = newName "and_R"
+             let code2 = compileExp e2 vtable t2
+             code1 @ code2 @ [ Mips.AND (place, t1, t2) ]
+(*
+match [code1.[0]] with
+  | codeTest -> code1 @ [ Mips.LI (place, makeConst 0) ]
+  | _ -> let t2 = newName "and_R"
+         let code2 = compileExp e2 vtable t2
+         code1 @ code2 @ [ Mips.AND (place, t1, t2) ]
+*)
   | Or (_, _, _) ->
       failwith "Unimplemented code generation of ||"
 
