@@ -276,8 +276,12 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
          the value of `a`; otherwise raise an error (containing 
          a meaningful message).
   *)
-  | Replicate (_, _, _, _) ->
-        failwith "Unimplemented interpretation of replicate"
+  | Replicate (n, a, tp, pos) ->
+        let lenny = evalExp(n, vtab, ftab)
+        let landis = evalExp(a, vtab, ftab)
+        match lenny with
+          | IntVal i -> if i >= 0 then List.replicate lenny landis
+          | _ -> raise (MyError("First argument of replicate is not an integer."))
 
   (* TODO project task 2: `map(f, arr)`
        pattern match the implementation of reduce:
