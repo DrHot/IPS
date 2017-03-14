@@ -48,16 +48,17 @@ let parse_error_rich =
 %token <(int*int)> NEGATE // We added this too
 %token <(int*int)> REPLICATE // We added this
 %token <(int*int)> MAP // We added this
+%token <bool*(int*int)> TRUE FALSE //We added this
 
 
 %nonassoc ifprec letprec
 %left OR
 %left AND
-%left NOT
+%nonassoc NOT
 %left DEQ LTH
 %left PLUS MINUS
 %left TIMES DIVIDE //Higher precedens than plus,minus
-%left NEGATE
+%nonassoc NEGATE
 
 
 %start Prog
@@ -101,6 +102,8 @@ Params : Type ID COMMA Params
 ///////////////////////////////////////////////////////
 
 Exp : NUM            { Constant (IntVal (fst $1), snd $1) }
+    | TRUE           { Constant (BoolVal (fst $1), snd $1) }
+    | FALSE          { Constant (BoolVal (fst $1), snd $1) }
     | CHARLIT        { Constant (CharVal (fst $1), snd $1) }
     | ID             { Var $1 }
     | STRINGLIT      { StringLit $1 }

@@ -59,6 +59,8 @@ let keyword (s, pos) =
        | "in"           -> Parser.IN pos
        | "int"          -> Parser.INT pos
        | "bool"         -> Parser.BOOL pos
+       | "true"         -> Parser.TRUE (true, pos)
+       | "false"        -> Parser.FALSE (false, pos)
        | "char"         -> Parser.CHAR pos
        | "fun"          -> Parser.FUN pos
        | "fn"           -> Parser.FN pos
@@ -87,10 +89,10 @@ rule Token = parse
                                   , getPos lexbuf )
                               }
   | "not"                 { Parser.NOT   (getPos lexbuf)}
-  | "true"                { Parser.STRINGLIT   ( Encoding.UTF8.GetString(lexbuf.Lexeme)
-                                               , getPos lexbuf)}
-  | "false"               { Parser.STRINGLIT   ( Encoding.UTF8.GetString(lexbuf.Lexeme)
-                                               , getPos lexbuf)}
+ //| "true"                { Parser.TRUE   ( Encoding.UTF8.GetString(lexbuf.Lexeme)
+ //                                              , getPos lexbuf)}
+ // | "false"               { Parser.STRINGLIT   ( Encoding.UTF8.GetString(lexbuf.Lexeme)
+ //                                              , getPos lexbuf)}
   | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']*
                           { keyword ( Encoding.UTF8.GetString(lexbuf.Lexeme)
                                     , getPos lexbuf ) }

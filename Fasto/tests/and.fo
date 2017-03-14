@@ -1,4 +1,4 @@
 fun bool main() =
   let a = not false in
   let b = true in
-  a&&b
+  write(a&&b)
