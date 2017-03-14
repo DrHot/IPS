@@ -265,8 +265,8 @@ and checkExp  (ftab : FunTable)
         let  (n_type, n_dec) = checkExp ftab vtab n_exp
         let  (a_type, a_dec) = checkExp ftab vtab a_exp
         if n_type = Int
-        then (Array a_type, Replicate (a_dec, pos))
-        else raise (MyError ("Replicate: wrong argument type "+ppType e_type, pos))
+        then (Array a_type, Replicate(n_dec, a_dec, a_type, pos))
+        else raise (MyError ("Replicate: wrong argument type "+ppType n_type, pos))
         
 
     (* TODO project task 2: Hint for `map(f, arr)`
@@ -276,9 +276,18 @@ and checkExp  (ftab : FunTable)
          - `arr` should be of type `[ta]`
          - the result of `map` should have type `[tb]`
     *)
-    | Map (_, _, _, _, _) ->
-        failwith "Unimplemented type check of map"
-
+    | Map (farg, arr_exp, _, _, pos) ->
+        let (arr_type, arr_dec) = checkExp ftab vtab arr_exp
+        match arr_type with
+           | Array t -> let elem_type = t
+                        let (f, f_arg_type) =
+                          match checkFunArg ftab vtab pos farg with
+                            | (f, res, [a]) -> if a = t
+                                               then (f, res)
+                                               else raise (MyError ("Map: function input type and array element type are not the same: "+ppType t+" and "+ppType a, pos))
+                            | _ -> raise (MyError ("Map: Function arguemnt is wrong.", pos))
+                        (Array f_arg_type, Map(f, arr_dec, elem_type, f_arg_type, pos))
+           | otherwise -> raise (MyError ("Map: Argument not an array", pos))
     (* TODO project task 2: `scan(f, ne, arr)` 
         Hint: Implementation is very similar to `reduce(f, ne, arr)`.
               (The difference between `scan` and `reduce` is that 

@@ -280,18 +280,31 @@ let rec evalExp (e : UntypedExp, vtab : VarTable, ftab : FunTable) : Value =
         let lenny = evalExp(n, vtab, ftab)
         let landis = evalExp(a, vtab, ftab)
         match lenny with
-          | IntVal i -> if i >= 0 then List.replicate lenny landis
-          | _ -> raise (MyError("First argument of replicate is not an integer."))
+          | IntVal i -> if i >= 0
+                        then ArrayVal((List.replicate i landis), valueType(landis))
+                        else raise (MyError("Integer value is negative.", pos))
+          | otherwise -> raise (MyError("First argument of replicate is not an integer.", pos))
 
   (* TODO project task 2: `map(f, arr)`
        pattern match the implementation of reduce:
-       - get the result type of `f`  (use `rtpFunArg` defined below)
-       - evaluate `arr` and check that the (value) result corresponds to an array,
-       - use F# `List.map` to evaluate `f(a)` for every element (value) `a` of `arr`,
+       - get the result type of `f`  (use `rtpFunArg` defined below)                  TJEK
+       - evaluate `arr` and check that the (value) result corresponds to an array,    TJEK
+       - use F# `List.map` to evaluate `f(a)` for every element (value) `a` of `arr`, 
        - create an `ArrayVal` from the (list) result of the previous step.
   *)
-  | Map (_, _, _, _, _) ->
-        failwith "Unimplemented interpretation of map"
+  | Map (farg, arr, fi, fr, pos) -> //  fi = function input type, fr = function result type
+        let fret = rtpFunArg farg ftab pos
+        let arreval = evalExp(arr, vtab, ftab)
+        match arreval with
+          | ArrayVal (v,_) -> let evalList = List.map (fun a -> evalFunArg(farg, vtab, ftab, pos, [a])) v
+                              (*let typen = match evalList with
+                                            | []   -> Int (* Arbitrary *)
+                                            | v::_ -> valueType v *)
+                              ArrayVal(evalList, Array fret)
+                              
+          | otherwise -> raise (MyError("Array argument not an array..", pos))
+        
+
 
   (* TODO project task 2: `scan(f, ne, arr)`
      Implementation similar to reduce, except that it produces an array 
