@@ -588,8 +588,49 @@ let rec compileExp  (e      : TypedExp)
         If `n` is less than `0` then remember to terminate the program with
         an error -- see implementation of `iota`.        
   *)
-  | Replicate (_, _, _, _) ->
-      failwith "Unimplemented code generation of replicate"
+  | Replicate (n_exp, a_exp, el_tp, pos) ->
+      let t_reg = newName "t_reg"
+      let x_reg = newName "x_reg"
+      let i_reg = newName "i_reg"
+      let n_reg = newName "n_reg"
+      let a_reg = newName "a_reg"
+      let n_code = compileExp n_exp vtable n_reg
+      let a_code = compileExp a_exp vtable a_reg
+      let alloc_code = dynalloc (n_reg, place, el_tp)
+      let loop_beg = newName "loop_beg"
+      let loop_end = newName "loop_end"
+
+      (* Set arr_reg to address of first element instead. *)
+      (* Set i_reg to 0. While i < size_reg, loop. *)
+      let loop_code_0 =
+              [ Mips.ADDI(x_reg, place, "4")    // add the size of an int, 4, to get to the first array element
+              ; Mips.MOVE(i_reg, "0")           // move 0 to the count register
+              ; Mips.LABEL(loop_beg)            // probably have to generate this label
+              ; Mips.SUB(t_reg, i_reg, n_reg)   // t_reg = i_reg - n_reg
+              ; Mips.BGEZ(t_reg, loop_end)      // t_reg >= 0 GOTO loop_end... when i >= N
+              ; Mips.ADDI(i_reg, i_reg, "1")    // add 1 to the counter, i_reg
+              ]
+      let loop_code_1 = 
+              match getElemSize el_tp with
+                | One  -> [ Mips.SB   (a_reg, x_reg, "0") // move a_reg to memory space mem[x_reg + 0]
+                          ; Mips.ADDI (x_reg, x_reg, "1") // add 1 to x_reg
+                          ]
+                | Four -> [ Mips.SW   (a_reg, x_reg, "0") // move a_reg to memory space mem[x_reg + 0]
+                          ; Mips.ADDI (x_reg, x_reg, "4") // add 4 to x_reg because it's now words
+                          ]
+
+
+      n_code
+       @ a_code
+       @ alloc_code
+       @ loop_code_0
+       @ loop_code_1
+       @ [Mips.J loop_beg; Mips.LABEL(loop_end)]
+
+  (* TODO project task 2: see also the comment to replicate.
+     `map(f, arr)`:  has some similarity with the implementation of iota. *)
+
+  (* reduce(f, acc, {x1, x2, ...}) = f(..., f(x2, f(x1, acc))) *)
 
   (* TODO project task 2: see also the comment to replicate.
      `map(f, arr)`:  has some similarity with the implementation of iota.
