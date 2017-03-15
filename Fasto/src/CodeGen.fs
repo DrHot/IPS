@@ -705,6 +705,7 @@ let rec compileExp  (e      : TypedExp)
   | Scan (binop, acc_exp, arr_exp, tp, pos) ->
       let arr_reg  = newName "arr_reg"   (* address of array *)
       let acc_reg  = newName "acc_reg"
+      let res_reg  = newName "res_reg"
       let size_reg = newName "size_reg"  (* size of input array *)
       let i_reg    = newName "ind_var"   (* loop counter *)
       let tmp_reg  = newName "tmp_reg"   (* several purposes *)
@@ -744,7 +745,7 @@ let rec compileExp  (e      : TypedExp)
               applyFunArg(binop, [acc_reg; tmp_reg], vtable, acc_reg, pos)
 
       let store_arr =
-              match getElemSize acc_reg with
+              match getElemSize tp with
                 | One ->  [ Mips.SB   (acc_reg, res_reg, "0")
                           ; Mips.ADDI (res_reg, res_reg, "1")
                           ]
@@ -760,6 +761,7 @@ let rec compileExp  (e      : TypedExp)
       @ load_code
       @ apply_code
       @ store_arr
+      @
          [ Mips.ADDI(i_reg, i_reg, "1")
          ; Mips.J loop_beg
          ; Mips.LABEL loop_end
