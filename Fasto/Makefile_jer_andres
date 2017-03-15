@@ -16,8 +16,6 @@ fslex=mono lib/fslex.exe
 fsyacc=mono lib/fsyacc.exe
 powerpack=lib/FSharp.PowerPack.dll
 fsharpc=fsharpc --nologo
-#fsharp fix
-mkbundle=mkbundle --simple
 
 LexerGen=bin/Lexer.fs
 ParserGen=bin/Parser.fs
