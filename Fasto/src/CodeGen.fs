@@ -648,40 +648,51 @@ let rec compileExp  (e      : TypedExp)
       let loop_end = newName "loop_end"
       let a_code   = compileExp arr_exp vtable arr_reg
 
-      let init_regs =   [ Mips.ADDI(arr_reg, place, "4")    // add the size of an int, 4, to get to the first array element
+      let init_size = [ Mips.LW(size_reg, arr_reg, "0") ]
+
+      let init_regs =   [ Mips.ADDI(arr2_reg, place, "4")
                         ; Mips.MOVE(i_reg, "0")
+                        ; Mips.ADDI(arr_reg, arr_reg, "4")
                         ]
 
       let loop_header = [ Mips.LABEL(loop_beg)
                         ; Mips.SUB(tmp_reg, i_reg, size_reg)
                         ; Mips.BGEZ(tmp_reg, loop_end)
                         ; Mips.ADDI(i_reg, i_reg, "1")
-                        ; Mips.LW(tmp_reg, arr2_reg, "0")
                         ]
+      let load_temp = 
+              match getElemSize in_tp with
+                | One  -> [ Mips.LB(tmp_reg, arr_reg,"0") 
+                          ; Mips.ADDI (arr_reg, arr_reg, "1")
+                          ]
+                | Four -> [ Mips.LW(tmp_reg, arr_reg,"0")
+                          ; Mips.ADDI (arr_reg, arr_reg, "4") 
+                          ] 
       let apply_func =
               applyFunArg(f_exp, [tmp_reg], vtable, tmp_reg, pos)
 
-      let loop_footer = 
+      let loop_store = 
               match getElemSize out_tp with
-                | One  -> [ Mips.LW   (arr2_reg, tmp_reg, "0") // move a_reg to memory space mem[x_reg + 0]
+                | One  -> [ Mips.SB   (tmp_reg, arr2_reg, "0") 
                           ; Mips.ADDI (arr2_reg, arr2_reg, "1")
-                          ; Mips.J (loop_beg)
-                          ; Mips.LABEL(loop_end)
                           ]
-                | Four -> [ Mips.LW   (arr2_reg, tmp_reg, "0") // move a_reg to memory space mem[x_reg + 0]
+                | Four -> [ Mips.SW   (tmp_reg, arr2_reg, "0") 
                           ; Mips.ADDI (arr2_reg, arr2_reg, "4")
-                          ; Mips.J (loop_beg)
-                          ; Mips.LABEL (loop_end)
                           ]
-
+      let loop_end = [ Mips.J (loop_beg)
+                     ; Mips.LABEL (loop_end)
+                     ]
 
 
       a_code
-       @ dynalloc (arr2_reg, place, out_tp)
+       @ init_size
+       @ dynalloc (size_reg, place, out_tp)
        @ init_regs
        @ loop_header
+       @ load_temp
        @ apply_func
-       @ loop_footer
+       @ loop_store
+       @ loop_end
 
 
   (* TODO project task 2: see also the comment to replicate.
