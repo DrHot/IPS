@@ -48,6 +48,7 @@ let parse_error_rich =
 %token <(int*int)> NEGATE // We added this too
 %token <(int*int)> REPLICATE // We added this
 %token <(int*int)> MAP // We added this
+%token <(int*int)> SCAN // We added this
 %token <bool*(int*int)> TRUE FALSE //We added this
 
 
@@ -132,6 +133,8 @@ Exp : NUM            { Constant (IntVal (fst $1), snd $1) }
                      { Reduce ($3, $5, $7, (), $1) }
     | MAP LPAR FunArg COMMA Exp RPAR
                      { Map ($3, $5, (), (), $1)}
+    | SCAN LPAR FunArg COMMA Exp COMMA Exp RPAR
+                     { Scan ($3, $5, $7, (), $1) }
     | LPAR Exp RPAR  { $2 }
     | LET ID EQ Exp IN Exp %prec letprec
                      { Let (Dec (fst $2, $4, $3), $6, $1) }
