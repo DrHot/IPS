@@ -22,14 +22,18 @@ let rec copyConstPropFoldExp (vtable : VarTable)
         (* Copy propagation is handled entirely in the following three
         cases for variables, array indexing, and let-bindings. *)
         | Var (name, pos) ->
-            (* TODO project task 3:
-                Should probably look in the symbol table to see if
-                a binding corresponding to the current variable `name`
-                exists and if so, it should replace the current expression
-                with the binded variable or constant.
-            *)
-            failwith "Unimplemented copyConstPropFold for Var"
+            let tab = SymTab.lookup name vtable
+            match tab with  
+              | Some (VarProp lkpname) -> Var(lkpname, pos)
+              | Some (ConstProp variab) -> Constant(variab, pos)
+              | _ -> Var (name ,pos)
+
         | Index (name, e, t, pos) ->
+            let e' = copyConstPropFoldExp vtable e
+            let tab = SymTab.lookup name vtable
+            match tab with
+              | Some (VarProp lkpname) -> Index(lkpname, e', t, pos)
+              | _ -> Index (name, e', t pos)
             (* TODO project task 3:
                 Should probably do the same as the `Var` case, for
                 the array name, and optimize the index expression `e` as well.
@@ -70,16 +74,28 @@ let rec copyConstPropFoldExp (vtable : VarTable)
                 | _ -> (* Fallthrough - for everything else, do nothing *)
                     let body' = copyConstPropFoldExp vtable body
                     Let (Dec (name, e', decpos), body', pos)
-        | Times (_, _, _) ->
-            (* TODO project task 3: implement as many safe algebraic
-                simplifications as you can think of. You may inspire 
-                yourself from the case of `Plus`. For example:
-                     1 * x = ? 
-                     x * 0 = ?
-            *)
+        | Times (e1, e2, pos) ->
+            let e1' = copyConstPropFoldExp vtable e1
+            let e2' = copyConstPropFoldExp vtable e2
+            match (e1', e2') with
+                | (Constant (IntVal x, _), Constant (IntVal y, _)) ->
+                    Constant (IntVal (x * y), pos)
+                | (Constant (IntVal 0, _), _) -> e1'
+                | (_, Constant (IntVal 0, _)) -> e2'
+                | (Constant (IntVal 1, _), _) -> e2'
+                | (_, Constant (IntVal 1, _)) -> e1'
+                | _ -> Times (e1', e2', pos)
+
+
             failwith "Unimplemented copyConstPropFold for multiplication"
         | And (e1, e2, pos) ->
-            (* TODO project task 3: see above. you may inspire yourself from `Or` *)
+            let e1' = copyConstPropFoldExp vtable e1
+            let e2' = copyConstPropFoldExp vtable e2
+            match (e1', e2') with
+                | (Constant (BoolVal a, _), Constant (BoolVal b, _)) ->
+                    Constant (BoolVal (a && b), pos)
+                | _ -> And (e1', e2', posq)
+
             failwith "Unimplemented copyConstPropFold for &&"
         | Constant (x,pos) -> Constant (x,pos)
         | StringLit (x,pos) -> StringLit (x,pos)
@@ -164,6 +180,8 @@ let rec copyConstPropFoldExp (vtable : VarTable)
             match (e1', e2') with
                 | (Constant (IntVal x, _), Constant (IntVal y, _)) ->
                     Constant (IntVal (x / y), pos)
+                | (Constant (IntVal 1, _), _) -> e1'
+                | (_, Constant (IntVal 1, _)) -> e2'
                 | _ -> Divide (e1', e2', pos)
         | Or (e1, e2, pos) ->
             let e1' = copyConstPropFoldExp vtable e1
