@@ -638,8 +638,51 @@ let rec compileExp  (e      : TypedExp)
      It is useful to maintain two array iterators: one for the input array `arr`
      and one for the result array.
   *)
-  | Map (_, _, _, _, _) ->
-      failwith "Unimplemented code generation of map"
+  | Map (f_exp, arr_exp, in_tp, out_tp, pos) ->
+      let arr_reg  = newName "arr_reg"   (* address of array *)
+      let size_reg = newName "size_reg"  (* size of input array *)
+      let arr2_reg = newName "arr2_reg"
+      let i_reg    = newName "i_reg"   (* loop counter *)
+      let tmp_reg  = newName "tmp_reg"   (* several purposes *)
+      let loop_beg = newName "loop_beg"
+      let loop_end = newName "loop_end"
+      let a_code   = compileExp arr_exp vtable arr_reg
+
+      let init_regs =   [ Mips.ADDI(arr_reg, place, "4")    // add the size of an int, 4, to get to the first array element
+                        ; Mips.MOVE(i_reg, "0")
+                        ]
+
+      let loop_header = [ Mips.LABEL(loop_beg)
+                        ; Mips.SUB(tmp_reg, i_reg, size_reg)
+                        ; Mips.BGEZ(tmp_reg, loop_end)
+                        ; Mips.ADDI(i_reg, i_reg, "1")
+                        ; Mips.LW(tmp_reg, arr2_reg, "0")
+                        ]
+      let apply_func =
+              applyFunArg(f_exp, [tmp_reg], vtable, tmp_reg, pos)
+
+      let loop_footer = 
+              match getElemSize out_tp with
+                | One  -> [ Mips.LW   (arr2_reg, tmp_reg, "0") // move a_reg to memory space mem[x_reg + 0]
+                          ; Mips.ADDI (arr2_reg, arr2_reg, "1")
+                          ; Mips.J (loop_beg)
+                          ; Mips.LABEL(loop_end)
+                          ]
+                | Four -> [ Mips.LW   (arr2_reg, tmp_reg, "0") // move a_reg to memory space mem[x_reg + 0]
+                          ; Mips.ADDI (arr2_reg, arr2_reg, "4")
+                          ; Mips.J (loop_beg)
+                          ; Mips.LABEL (loop_end)
+                          ]
+
+
+
+      a_code
+       @ dynalloc (arr2_reg, place, out_tp)
+       @ init_regs
+       @ loop_header
+       @ apply_func
+       @ loop_footer
+
 
   (* TODO project task 2: see also the comment to replicate.
      `scan(f, ne, arr)`: you can inspire yourself from the implementation of 
