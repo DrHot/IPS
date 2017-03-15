@@ -33,16 +33,15 @@ let rec copyConstPropFoldExp (vtable : VarTable)
             let tab = SymTab.lookup name vtable
             match tab with
               | Some (VarProp lkpname) -> Index(lkpname, e', t, pos)
-              | _ -> Index (name, e', t pos)
+              | _ -> Index (name, e', t, pos)
             (* TODO project task 3:
                 Should probably do the same as the `Var` case, for
                 the array name, and optimize the index expression `e` as well.
             *)
-            failwith "Unimplemented copyConstPropFold for Index"
         | Let (Dec (name, e, decpos), body, pos) ->
             let e' = copyConstPropFoldExp vtable e
             match e' with
-                | Var (_, _) ->
+                | Var (_, _) -> 
                     (* TODO project task 3:
                         Hint: I have discovered a variable-copy statement `let x = a`.
                               I should probably record it in the `vtable` by
@@ -94,7 +93,7 @@ let rec copyConstPropFoldExp (vtable : VarTable)
             match (e1', e2') with
                 | (Constant (BoolVal a, _), Constant (BoolVal b, _)) ->
                     Constant (BoolVal (a && b), pos)
-                | _ -> And (e1', e2', posq)
+                | _ -> And (e1', e2', pos)
 
             failwith "Unimplemented copyConstPropFold for &&"
         | Constant (x,pos) -> Constant (x,pos)

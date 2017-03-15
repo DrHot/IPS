@@ -1,0 +1,5 @@
+fun int main() =
+  let a = 2 in
+  let b = 0 in
+  write(a*b)
+  

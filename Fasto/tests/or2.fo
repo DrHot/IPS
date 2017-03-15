@@ -1,0 +1,4 @@
+fun bool main() =
+  let a = true in
+  let b = false in
+  write(a||b)

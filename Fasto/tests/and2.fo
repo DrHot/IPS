@@ -1,0 +1,4 @@
+fun bool main() =
+  let a = (5==5) in
+  let b = a in
+  write(a&&b)
